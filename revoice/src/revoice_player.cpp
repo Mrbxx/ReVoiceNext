@@ -186,13 +186,13 @@ void CRevoicePlayer::UpdateVoiceRate(double delta)
 		switch (m_CodecType)
 		{
 		case vct_silk:
-			m_VoiceRate -= int(delta * MAX_SILK_VOICE_RATE) + MAX_SILK_DATA_LEN;
+			m_VoiceRate -= int(delta * MAX_SILK_VOICE_RATE);
 			break;
 		case vct_opus:
-			m_VoiceRate -= int(delta * MAX_OPUS_VOICE_RATE) + MAX_OPUS_DATA_LEN;
+			m_VoiceRate -= int(delta * MAX_OPUS_VOICE_RATE);
 			break;
 		case vct_speex:
-			m_VoiceRate -= int(delta * MAX_SPEEX_VOICE_RATE) + MAX_SPEEX_DATA_LEN;
+			m_VoiceRate -= int(delta * MAX_SPEEX_VOICE_RATE);
 			break;
 		default:
 			break;

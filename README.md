@@ -31,6 +31,11 @@ public func(index)
 }
 ```
 
+## Fixes
+
+- [**CS 1.6 / Steam crash on Linux when a non-Steam client speaks**](https://github.com/ValveSoftware/halflife/issues/3898) — when a non-Steam player (Speex) talks, the server forwards raw Speex data to Steam clients; Linux Steam clients crash on receiving a codec they don't expect. ReVoiceNext transcodes Speex → Opus in real time so Steam clients always receive the correct codec.
+- [**Voice flood vulnerability**](https://github.com/rehlds/ReVoice/issues/30) — an attacker could flood the server with voice packets, causing lag and kicking all players. ReVoiceNext fixes the rate limiter so flood packets are blocked before they can overflow the network buffer.
+
 ## Based on
 
 - **[ReVoice](https://github.com/rehlds/ReVoice)** by ReHLDS Team — latest master (`9db23f1`, 2025-04-05)
