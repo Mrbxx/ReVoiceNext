@@ -55,9 +55,12 @@ void CRevoicePlayer::OnConnected()
 		return;
 	}
 
-	int protocol = g_ReunionApi->GetClientProtocol(m_Client->GetId());
-	if (protocol != 47 && protocol != 48) {
-		return;
+	int protocol = 47;
+	if (g_ReunionApi) {
+		protocol = g_ReunionApi->GetClientProtocol(m_Client->GetId());
+		if (protocol != 47 && protocol != 48) {
+			return;
+		}
 	}
 
 	// reset codec state
@@ -72,7 +75,7 @@ void CRevoicePlayer::OnConnected()
 	m_RequestId = MAKE_REQUESTID(PLID);
 	m_Protocol = protocol;
 
-	if (g_ReunionApi->GetClientAuthtype(m_Client->GetId()) == DP_AUTH_HLTV) {
+	if (g_ReunionApi && g_ReunionApi->GetClientAuthtype(m_Client->GetId()) == DP_AUTH_HLTV) {
 		m_CodecType = GetCodecTypeByString(g_pcv_rev_hltv_codec->string);
 		m_HLTV = true;
 	}
