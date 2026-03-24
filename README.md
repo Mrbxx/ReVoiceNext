@@ -31,6 +31,10 @@ public func(index)
 }
 ```
 
+## Fixes
+
+- [**CS 1.6 / Steam crash on Linux when a non-Steam client speaks**](https://github.com/ValveSoftware/halflife/issues/3898) — when a non-Steam player (Speex) talks, the server forwards raw Speex data to Steam clients; Linux Steam clients crash on receiving a codec they don't expect. ReVoiceNext transcodes Speex → Opus in real time so Steam clients always receive the correct codec.
+
 ## Based on
 
 - **[ReVoice](https://github.com/rehlds/ReVoice)** by ReHLDS Team — latest master (`9db23f1`, 2025-04-05)
