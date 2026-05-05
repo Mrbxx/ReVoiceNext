@@ -1,0 +1,81 @@
+name: Build Linux i386
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+  workflow_dispatch:
+  release:
+    types:
+      - published
+
+jobs:
+  build-linux-i386:
+    name: Build Linux i386 GCC 7
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build in Ubuntu 18.04 Docker
+        run: |
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            ubuntu:18.04 \
+            bash -lc '
+              set -euo pipefail
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update
+              apt-get install -y \
+                ca-certificates \
+                git \
+                wget \
+                curl \
+                build-essential \
+                gcc-7 \
+                g++-7 \
+                gcc-7-multilib \
+                g++-7-multilib \
+                libc6-dev-i386 \
+                ninja-build \
+                binutils
+              curl -L "https://github.com/Kitware/CMake/releases/download/v3.27.9/cmake-3.27.9-linux-x86_64.tar.gz" -o /tmp/cmake.tar.gz
+              tar -xzf /tmp/cmake.tar.gz -C /opt
+              export PATH="/opt/cmake-3.27.9-linux-x86_64/bin:$PATH"
+              export CC=gcc-7
+              export CXX=g++-7
+              cmake --preset ninja-gcc-linux \
+                -D CMAKE_C_COMPILER=gcc-7 \
+                -D CMAKE_CXX_COMPILER=g++-7 \
+                -D LINK_STATIC_GCC=ON \
+                -D LINK_STATIC_STDCPP=ON \
+                -D USE_LINKER_GOLD=OFF \
+                -D OPTIMIZE_FOR_CURRENT_CPU=OFF
+              cmake --build --preset ninja-gcc-linux-release --parallel
+            '
+
+      - name: Inspect binary
+        run: |
+          find bin -type f -maxdepth 5 -print
+          file bin/GNU-Release/revoice_mm_i386.so
+          ldd bin/GNU-Release/revoice_mm_i386.so || true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: revoice-linux-i386-gcc7
+          path: |
+            bin/GNU-Release/revoice_mm_i386.so
+            reapi_vtc.inc
+
+      - name: Upload files to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            bin/GNU-Release/revoice_mm_i386.so
+            reapi_vtc.inc
