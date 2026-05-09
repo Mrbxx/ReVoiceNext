@@ -46,7 +46,7 @@ static int ResamplePCM(const int16_t *in, int inSamples, int srcRate, int16_t *o
 		int frac = (int)(pos % dstRate);
 		int16_t a = (idx < inSamples) ? in[idx] : 0;
 		int16_t b = (idx + 1 < inSamples) ? in[idx + 1] : 0;
-		out[i] = (int16_t)(a + (int32_t)(b - a) * frac / dstRate);
+		out[i] = (int16_t)(a + (int32_t)((int64_t)(b - a) * frac / dstRate));
 	}
 
 	return outSamples;
@@ -170,7 +170,7 @@ void SV_ParseVoiceData_emu(IGameClient *cl)
 		CRevoicePlayer *dstPlayer = &g_Players[i];
 		IGameClient *dstClient = dstPlayer->GetClient();
 
-		if (!((1 << i) & cl->GetVoiceStream(0)) && dstPlayer != srcPlayer)
+		if (!((1U << i) & cl->GetVoiceStream(0)) && dstPlayer != srcPlayer)
 			continue;
 
 		if (!dstClient->IsActive() || !dstClient->IsConnected())
@@ -295,6 +295,8 @@ void OnClientCommandReceiving(edict_t *pClient)
 void SV_WriteVoiceCodec_hooked(IRehldsHook_SV_WriteVoiceCodec *chain, sizebuf_t *sb)
 {
 	IGameClient *cl = g_RehldsFuncs->GetHostClient();
+	if (!cl)
+		RETURN_META(MRES_IGNORED);
 	CRevoicePlayer *plr = GetPlayerByClientPtr(cl);
 
 	switch (plr->GetCodecType())
