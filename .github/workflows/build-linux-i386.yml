@@ -5,20 +5,31 @@ on:
     branches:
       - master
       - main
+      - feature/*
+    paths-ignore:
+      - 'README.md'
   pull_request:
   workflow_dispatch:
-  release:
-    types:
-      - published
 
 jobs:
   build-linux-i386:
     name: Build Linux i386 GCC 7
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version
+        id: version
+        run: |
+          COUNT=$(git rev-list --count HEAD)
+          TAG="v1.0.$COUNT"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Build in Ubuntu 18.04 Docker
         run: |
@@ -48,6 +59,7 @@ jobs:
               export PATH="/opt/cmake-3.27.9-linux-x86_64/bin:$PATH"
               export CC=gcc-7
               export CXX=g++-7
+              git config --global --add safe.directory /workspace
               cmake --preset ninja-gcc-linux \
                 -D CMAKE_C_COMPILER=gcc-7 \
                 -D CMAKE_CXX_COMPILER=g++-7 \
@@ -72,10 +84,45 @@ jobs:
             bin/GNU-Release/revoice_mm_i386.so
             reapi_vtc.inc
 
-      - name: Upload files to GitHub Release
-        if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            bin/GNU-Release/revoice_mm_i386.so
+      - name: Tag and release
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          gh release list --limit 100 --json tagName --jq '.[].tagName' | while read tag; do
+            gh release delete "$tag" --yes --cleanup-tag || true
+          done
+          git tag -d ${{ steps.version.outputs.tag }} 2>/dev/null || true
+          git push origin :refs/tags/${{ steps.version.outputs.tag }} 2>/dev/null || true
+          git tag ${{ steps.version.outputs.tag }}
+          git push origin ${{ steps.version.outputs.tag }}
+          gh release create ${{ steps.version.outputs.tag }} \
+            --title "${{ steps.version.outputs.tag }}" \
+            --generate-notes \
+            bin/GNU-Release/revoice_mm_i386.so \
+            reapi_vtc.inc
+
+      - name: Tag and pre-release
+        if: startsWith(github.ref, 'refs/heads/feature/') && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          SAFE_BRANCH=$(echo "${GITHUB_REF#refs/heads/}" | tr '/' '-')
+          PRE_TAG="${{ steps.version.outputs.tag }}-${SAFE_BRANCH}"
+          gh release list --limit 100 --json tagName --jq '.[].tagName' | grep -- "-${SAFE_BRANCH}$" | while read tag; do
+            gh release delete "$tag" --yes --cleanup-tag || true
+          done
+          git tag -d "$PRE_TAG" 2>/dev/null || true
+          git push origin ":refs/tags/$PRE_TAG" 2>/dev/null || true
+          git tag "$PRE_TAG"
+          git push origin "$PRE_TAG"
+          gh release create "$PRE_TAG" \
+            --title "$PRE_TAG" \
+            --prerelease \
+            --generate-notes \
+            bin/GNU-Release/revoice_mm_i386.so \
             reapi_vtc.inc

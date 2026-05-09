@@ -205,12 +205,15 @@ void CRevoicePlayer::UpdateVoiceRate(double delta)
 
 const char *CRevoicePlayer::GetCodecTypeToString()
 {
-	return m_szCodecType[ m_CodecType ];
+	if ((size_t)m_CodecType >= sizeof(m_szCodecType) / sizeof(m_szCodecType[0]))
+		return "unknown";
+	return m_szCodecType[m_CodecType];
 }
 
 void CRevoicePlayer::IncreaseVoiceRate(int dataLength)
 {
-	m_VoiceRate += dataLength;
+	if (dataLength > 0 && m_VoiceRate <= INT_MAX - dataLength)
+		m_VoiceRate += dataLength;
 }
 
 CodecType CRevoicePlayer::GetCodecTypeByString(const char *codec)

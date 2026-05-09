@@ -264,7 +264,9 @@ void CUtlMemory<T>::Grow(int num)
 
 	if (m_pMemory)
 	{
-		m_pMemory = (T*)realloc(m_pMemory, m_nAllocationCount * sizeof(T));
+		T* pNewMem = (T*)realloc(m_pMemory, m_nAllocationCount * sizeof(T));
+		if (pNewMem)
+			m_pMemory = pNewMem;
 	}
 	else
 	{
@@ -292,7 +294,9 @@ inline void CUtlMemory<T>::EnsureCapacity(int num)
 	m_nAllocationCount = num;
 	if (m_pMemory)
 	{
-		m_pMemory = (T*)realloc(m_pMemory, m_nAllocationCount * sizeof(T));
+		T* pNewMem = (T*)realloc(m_pMemory, m_nAllocationCount * sizeof(T));
+		if (pNewMem)
+			m_pMemory = pNewMem;
 	}
 	else
 	{

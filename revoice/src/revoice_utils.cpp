@@ -96,7 +96,5 @@ void util_syserror(const char *fmt, ...)
 
 	LCPrintf(true, "ERROR: %s", buf);
 
-	int *null = 0;
-	*null = 0;
-	exit(-1);
+	abort();
 }

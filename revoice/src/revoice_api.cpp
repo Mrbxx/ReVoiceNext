@@ -54,7 +54,11 @@ bool VoiceTranscoderAPI::IsClientMuted(size_t clientIndex)
 
 void VoiceTranscoderAPI::PlaySound(size_t /*receiverClientIndex*/, const char* /*soundFilePath*/)
 {
-	// Not implemented
+	static bool warned = false;
+	if (!warned) {
+		warned = true;
+		UTIL_LogPrintf("[ReVoice] WARNING: PlaySound() is not implemented\n");
+	}
 }
 
 void VoiceTranscoderAPI::BlockClient(size_t clientIndex)

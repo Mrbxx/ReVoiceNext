@@ -48,11 +48,9 @@ int CSteamP2PCodec::StreamDecode(const char *pCompressed, int compressedBytes, c
 				break;
 			}
 			// Voice payload
-			case PLT_Silk: // silk deprecated
-			case PLT_OPUS: // opus deprecated
-			{
-				break;
-			}
+			case PLT_Silk:
+			case PLT_OPUS:
+				return 0;
 			case PLT_OPUS_PLC: // opus plc
 			{
 				if (readPos + 2 > maxReadPos) {

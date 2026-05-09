@@ -39,6 +39,7 @@ bool VoiceEncoder_Opus::Init(int quality)
 	opus_encoder_ctl((OpusEncoder *)m_pEncoder, OPUS_SET_SIGNAL_REQUEST, OPUS_SIGNAL_VOICE);
 	opus_encoder_ctl((OpusEncoder *)m_pEncoder, OPUS_SET_DTX_REQUEST, 1);
 
+
 	int decSizeBytes = opus_decoder_get_size(MAX_CHANNELS);
 	m_pDecoder = (OpusDecoder *)malloc(decSizeBytes);
 	if (opus_decoder_init((OpusDecoder *)m_pDecoder, m_samplerate, MAX_CHANNELS) != OPUS_OK) {
@@ -212,7 +213,8 @@ int VoiceEncoder_Opus::Decompress(const char *pCompressed, int compressedBytes, 
 					int nBytes = opus_decode(m_pDecoder, 0, 0, (opus_int16 *)pWritePos, FRAME_SIZE, 0);
 					if (nBytes <= 0)
 					{
-						// raw corrupted
+						memset(pWritePos, 0, MAX_FRAME_SIZE);
+						pWritePos += MAX_FRAME_SIZE;
 						continue;
 					}
 
@@ -247,7 +249,7 @@ int VoiceEncoder_Opus::Decompress(const char *pCompressed, int compressedBytes, 
 		int nBytes = opus_decode(m_pDecoder, (const unsigned char *)pReadPos, nPayloadSize, (opus_int16 *)pWritePos, FRAME_SIZE, 0);
 		if (nBytes <= 0)
 		{
-			// raw corrupted
+			pWritePos += MAX_FRAME_SIZE;
 		}
 		else
 		{
