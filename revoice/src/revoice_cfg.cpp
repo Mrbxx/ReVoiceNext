@@ -32,13 +32,21 @@ bool Revoice_Init_Config()
 	return true;
 }
 
-cvar_t g_cv_rev_hltv_codec    = { "REV_HltvCodec", "opus", 0, 0.0f, nullptr };
-cvar_t g_cv_rev_default_codec = { "REV_DefaultCodec", "speex", 0, 0.0f, nullptr };
-cvar_t g_cv_rev_version       = { "revoice_version", APP_VERSION, FCVAR_SERVER, 0.0f, nullptr };
+cvar_t g_cv_rev_hltv_codec        = { "REV_HltvCodec",        "opus",  0, 0.0f, nullptr };
+cvar_t g_cv_rev_default_codec     = { "REV_DefaultCodec",     "speex", 0, 0.0f, nullptr };
+cvar_t g_cv_rev_version           = { "revoice_version",      APP_VERSION, FCVAR_SERVER, 0.0f, nullptr };
+cvar_t g_cv_rev_scream_detection  = { "REV_ScreamDetection",  "1",    0, 0.0f, nullptr };
+cvar_t g_cv_rev_scream_threshold  = { "REV_ScreamThreshold",  "0.80", 0, 0.0f, nullptr };
+cvar_t g_cv_rev_scream_duration   = { "REV_ScreamDuration",   "3.0",  0, 0.0f, nullptr };
+cvar_t g_cv_rev_scream_mute_time  = { "REV_ScreamMuteTime",   "5",    0, 0.0f, nullptr };
 
-cvar_t *g_pcv_rev_hltv_codec    = nullptr;
-cvar_t *g_pcv_rev_default_codec = nullptr;
-cvar_t *g_pcv_sv_voiceenable    = nullptr;
+cvar_t *g_pcv_rev_hltv_codec       = nullptr;
+cvar_t *g_pcv_rev_default_codec    = nullptr;
+cvar_t *g_pcv_sv_voiceenable       = nullptr;
+cvar_t *g_pcv_rev_scream_detection = nullptr;
+cvar_t *g_pcv_rev_scream_threshold = nullptr;
+cvar_t *g_pcv_rev_scream_duration  = nullptr;
+cvar_t *g_pcv_rev_scream_mute_time = nullptr;
 
 void Revoice_Init_Cvars()
 {
@@ -47,10 +55,18 @@ void Revoice_Init_Cvars()
 	g_engfuncs.pfnCvar_RegisterVariable(&g_cv_rev_version);
 	g_engfuncs.pfnCvar_RegisterVariable(&g_cv_rev_hltv_codec);
 	g_engfuncs.pfnCvar_RegisterVariable(&g_cv_rev_default_codec);
+	g_engfuncs.pfnCvar_RegisterVariable(&g_cv_rev_scream_detection);
+	g_engfuncs.pfnCvar_RegisterVariable(&g_cv_rev_scream_threshold);
+	g_engfuncs.pfnCvar_RegisterVariable(&g_cv_rev_scream_duration);
+	g_engfuncs.pfnCvar_RegisterVariable(&g_cv_rev_scream_mute_time);
 
-	g_pcv_sv_voiceenable = g_engfuncs.pfnCVarGetPointer("sv_voiceenable");
-	g_pcv_rev_hltv_codec = g_engfuncs.pfnCVarGetPointer(g_cv_rev_hltv_codec.name);
-	g_pcv_rev_default_codec = g_engfuncs.pfnCVarGetPointer(g_cv_rev_default_codec.name);
+	g_pcv_sv_voiceenable       = g_engfuncs.pfnCVarGetPointer("sv_voiceenable");
+	g_pcv_rev_hltv_codec       = g_engfuncs.pfnCVarGetPointer(g_cv_rev_hltv_codec.name);
+	g_pcv_rev_default_codec    = g_engfuncs.pfnCVarGetPointer(g_cv_rev_default_codec.name);
+	g_pcv_rev_scream_detection = g_engfuncs.pfnCVarGetPointer(g_cv_rev_scream_detection.name);
+	g_pcv_rev_scream_threshold = g_engfuncs.pfnCVarGetPointer(g_cv_rev_scream_threshold.name);
+	g_pcv_rev_scream_duration  = g_engfuncs.pfnCVarGetPointer(g_cv_rev_scream_duration.name);
+	g_pcv_rev_scream_mute_time = g_engfuncs.pfnCVarGetPointer(g_cv_rev_scream_mute_time.name);
 
 	g_RehldsFuncs->AddCvarListener(g_cv_rev_hltv_codec.name, Revoice_Update_Hltv);
 	g_RehldsFuncs->AddCvarListener(g_cv_rev_default_codec.name, Revoice_Update_Players);

@@ -52,7 +52,7 @@ static int ResamplePCM(const int16_t *in, int inSamples, int srcRate, int16_t *o
 	return outSamples;
 }
 
-int TranscodeVoice(CRevoicePlayer *srcPlayer, const char *srcBuf, int srcBufLen, IVoiceCodec *srcCodec, IVoiceCodec *dstCodec, char *dstBuf, int dstBufSize)
+int TranscodeVoice(CRevoicePlayer *srcPlayer, const char *srcBuf, int srcBufLen, IVoiceCodec *srcCodec, IVoiceCodec *dstCodec, char *dstBuf, int dstBufSize, float *outRMS = nullptr)
 {
 	static char decodedBuf[65536];
 	static int16_t resampledBuf[32768];
@@ -60,6 +60,14 @@ int TranscodeVoice(CRevoicePlayer *srcPlayer, const char *srcBuf, int srcBufLen,
 	int numDecodedSamples = srcCodec->Decompress(srcBuf, srcBufLen, decodedBuf, sizeof(decodedBuf));
 	if (numDecodedSamples <= 0)
 		return 0;
+
+	if (outRMS) {
+		const int16_t *samples = (const int16_t *)decodedBuf;
+		int64_t sumSq = 0;
+		for (int i = 0; i < numDecodedSamples; i++)
+			sumSq += (int64_t)samples[i] * samples[i];
+		*outRMS = sqrtf((float)(sumSq / numDecodedSamples)) / 32767.0f;
+	}
 
 	const char *encodeBuf = decodedBuf;
 	int encodeSamples = numDecodedSamples;
@@ -112,7 +120,6 @@ void SV_ParseVoiceData_emu(IGameClient *cl)
 	if (srcPlayer->IsMuted())
 		return;
 
-	// Two separate output buffers: Opus for Steam clients, Speex for non-Steam
 	static char opusBuf[4096];
 	static char speexBuf[4096];
 
@@ -120,6 +127,7 @@ void SV_ParseVoiceData_emu(IGameClient *cl)
 	char *speexData = nullptr;
 	int opusDataLen = 0;
 	int speexDataLen = 0;
+	float voiceRMS = 0.0f;
 
 	switch (srcPlayer->GetCodecType())
 	{
@@ -128,7 +136,7 @@ void SV_ParseVoiceData_emu(IGameClient *cl)
 		if (nDataLength > MAX_SILK_DATA_LEN || srcPlayer->GetVoiceRate() > MAX_SILK_VOICE_RATE)
 			return;
 
-		opusDataLen = TranscodeVoice(srcPlayer, chReceived, nDataLength, srcPlayer->GetSilkCodec(), srcPlayer->GetOpusCodec(), opusBuf, sizeof(opusBuf));
+		opusDataLen = TranscodeVoice(srcPlayer, chReceived, nDataLength, srcPlayer->GetSilkCodec(), srcPlayer->GetOpusCodec(), opusBuf, sizeof(opusBuf), &voiceRMS);
 		speexDataLen = TranscodeVoice(srcPlayer, chReceived, nDataLength, srcPlayer->GetSilkCodec(), srcPlayer->GetSpeexCodec(), speexBuf, sizeof(speexBuf));
 		opusData = opusBuf;
 		speexData = speexBuf;
@@ -139,10 +147,9 @@ void SV_ParseVoiceData_emu(IGameClient *cl)
 		if (nDataLength > MAX_OPUS_DATA_LEN || srcPlayer->GetVoiceRate() > MAX_OPUS_VOICE_RATE)
 			return;
 
-		// Pass Opus through for Steam clients, transcode to Speex for non-Steam
 		opusData = chReceived;
 		opusDataLen = nDataLength;
-		speexDataLen = TranscodeVoice(srcPlayer, chReceived, nDataLength, srcPlayer->GetOpusCodec(), srcPlayer->GetSpeexCodec(), speexBuf, sizeof(speexBuf));
+		speexDataLen = TranscodeVoice(srcPlayer, chReceived, nDataLength, srcPlayer->GetOpusCodec(), srcPlayer->GetSpeexCodec(), speexBuf, sizeof(speexBuf), &voiceRMS);
 		if (speexDataLen > 0)
 			speexData = speexBuf;
 		break;
@@ -152,10 +159,9 @@ void SV_ParseVoiceData_emu(IGameClient *cl)
 		if (nDataLength > MAX_SPEEX_DATA_LEN || srcPlayer->GetVoiceRate() > MAX_SPEEX_VOICE_RATE)
 			return;
 
-		// Pass Speex through for non-Steam clients, transcode to Opus for Steam
 		speexData = chReceived;
 		speexDataLen = nDataLength;
-		opusDataLen = TranscodeVoice(srcPlayer, chReceived, nDataLength, srcPlayer->GetSpeexCodec(), srcPlayer->GetOpusCodec(), opusBuf, sizeof(opusBuf));
+		opusDataLen = TranscodeVoice(srcPlayer, chReceived, nDataLength, srcPlayer->GetSpeexCodec(), srcPlayer->GetOpusCodec(), opusBuf, sizeof(opusBuf), &voiceRMS);
 		if (opusDataLen > 0)
 			opusData = opusBuf;
 		break;
@@ -163,6 +169,8 @@ void SV_ParseVoiceData_emu(IGameClient *cl)
 	default:
 		return;
 	}
+
+	srcPlayer->UpdateScreamState(voiceRMS);
 
 	int maxclients = g_RehldsSvs->GetMaxClients();
 	for (int i = 0; i < maxclients; i++)
@@ -225,6 +233,8 @@ void StartFrame_PostHook()
 			player->SpeakDone();
 			g_OnClientStopSpeak(client->GetId() + 1);
 		}
+
+		player->CheckScreamMuteExpiry();
 	}
 
 	SET_META_RESULT(MRES_IGNORED);

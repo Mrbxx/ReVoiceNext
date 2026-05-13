@@ -6,6 +6,7 @@
 
 #include <time.h>
 #include <chrono>
+#include <cmath>
 #include <cstring>
 
 #include <rehlsdk/dlls/extdll.h>

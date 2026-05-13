@@ -8,11 +8,12 @@ A Metamod plugin for [ReHLDS](https://github.com/rehlds/ReHLDS) that enables voi
 
 ## Features
 
-- **Voice transcoding** — Steam clients (SILK/opus) and nonsteam clients (speex) can talk with each other transparently
-- **Codec auto-detection** — detects client codec support via the VTC_Check mechanism
-- **Speaking detection** — fires events when a player starts or stops talking
-- **Mute** — mute players (voice not forwarded)
-- **ReAPI integration** — exposes `IVoiceTranscoderAPI` via ReHLDS `RegisterPluginApi`; use [ReAPI](https://github.com/rehlds/ReAPI) for scripting support
+- **Voice transcoding** - Steam clients (SILK/opus) and nonsteam clients (speex) can talk with each other transparently
+- **Codec auto-detection** - detects client codec support via the VTC_Check mechanism
+- **Speaking detection** - fires events when a player starts or stops talking
+- **Scream detection** *(pre-release beta)* - automatically mutes players that exceed the amplitude threshold for a configurable duration
+- **Mute** - mute players (voice not forwarded)
+- **ReAPI integration** - exposes `IVoiceTranscoderAPI` via ReHLDS `RegisterPluginApi`
 
 ## ReAPI scripting
 

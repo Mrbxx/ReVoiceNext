@@ -27,8 +27,12 @@ CRevoicePlayer::CRevoicePlayer()
 	m_IsMuted = false;
 	m_IsBlocked = false;
 	m_IsSpeaking = false;
+	m_IsScreaming = false;
+	m_IsScreamMuted = false;
 	m_iCheckingState = 0;
 	m_VoiceEndTime = std::chrono::steady_clock::now();
+	m_ScreamStartTime = std::chrono::steady_clock::now();
+	m_ScreamMuteEndTime = std::chrono::steady_clock::now();
 }
 
 CRevoicePlayer::~CRevoicePlayer()
@@ -95,6 +99,8 @@ void CRevoicePlayer::OnDisconnected()
 	m_IsMuted = false;
 	m_IsBlocked = false;
 	m_IsSpeaking = false;
+	m_IsScreaming = false;
+	m_IsScreamMuted = false;
 	m_iCheckingState = 0;
 }
 
@@ -214,6 +220,43 @@ void CRevoicePlayer::IncreaseVoiceRate(int dataLength)
 {
 	if (dataLength > 0 && m_VoiceRate <= INT_MAX - dataLength)
 		m_VoiceRate += dataLength;
+}
+
+void CRevoicePlayer::UpdateScreamState(float rms)
+{
+	if (g_pcv_rev_scream_detection->value == 0.0f)
+		return;
+
+	auto now = std::chrono::steady_clock::now();
+
+	if (rms >= g_pcv_rev_scream_threshold->value) {
+		if (!m_IsScreaming) {
+			m_IsScreaming = true;
+			m_ScreamStartTime = now;
+		} else if (!m_IsScreamMuted) {
+			auto elapsed = std::chrono::duration<float>(now - m_ScreamStartTime).count();
+			if (elapsed >= g_pcv_rev_scream_duration->value) {
+				m_IsScreamMuted = true;
+				m_IsMuted = true;
+				if (g_pcv_rev_scream_mute_time->value > 0.0f)
+					m_ScreamMuteEndTime = now + std::chrono::milliseconds((long long)(g_pcv_rev_scream_mute_time->value * 1000.0f));
+			}
+		}
+	} else {
+		m_IsScreaming = false;
+	}
+}
+
+void CRevoicePlayer::CheckScreamMuteExpiry()
+{
+	if (!m_IsScreamMuted || g_pcv_rev_scream_mute_time->value <= 0.0f)
+		return;
+
+	if (std::chrono::steady_clock::now() >= m_ScreamMuteEndTime) {
+		m_IsScreamMuted = false;
+		m_IsMuted = false;
+		m_IsScreaming = false;
+	}
 }
 
 CodecType CRevoicePlayer::GetCodecTypeByString(const char *codec)

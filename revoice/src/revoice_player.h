@@ -23,8 +23,12 @@ private:
 	bool m_IsMuted;
 	bool m_IsBlocked;
 	bool m_IsSpeaking;
+	bool m_IsScreaming;
+	bool m_IsScreamMuted;
 	int m_iCheckingState;
 	std::chrono::steady_clock::time_point m_VoiceEndTime;
+	std::chrono::steady_clock::time_point m_ScreamStartTime;
+	std::chrono::steady_clock::time_point m_ScreamMuteEndTime;
 
 public:
 	CRevoicePlayer();
@@ -70,6 +74,9 @@ public:
 		m_VoiceEndTime = std::chrono::steady_clock::now() + SPEAKING_TIMEOUT;
 	}
 	void SpeakDone() { m_IsSpeaking = false; }
+
+	void UpdateScreamState(float rms);
+	void CheckScreamMuteExpiry();
 
 	int GetCheckingState() const      { return m_iCheckingState; }
 	void SetCheckingState(int state)  { m_iCheckingState = state; }
